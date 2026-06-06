@@ -38,6 +38,14 @@ DEFAULT_CONFIG = {
             "long_press": {"action": "mic_mute_toggle"},
             "press_rotate_right": {"action": "scroll_down", "amount": 3},
             "press_rotate_left": {"action": "scroll_up", "amount": 3}
+        },
+        "spotify.exe": {
+            "press": {"action": "key", "keys": "space"},
+            "double_press": {"action": "key", "keys": "ctrl+right"},
+            "triple_press": {"action": "key", "keys": "ctrl+left"},
+            "long_press": {"action": "mute"},
+            "press_rotate_right": {"action": "key", "keys": "ctrl+right"},
+            "press_rotate_left": {"action": "key", "keys": "ctrl+left"}
         }
     }
 }

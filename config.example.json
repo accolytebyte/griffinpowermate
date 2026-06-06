@@ -33,6 +33,14 @@
       "double_press":       { "action": "key", "keys": "ctrl+t" },
       "long_press":         { "action": "key", "keys": "f5" },
       "triple_press":       { "action": "macro", "sequence": ["ctrl+l", "ctrl+c", "ctrl+t"] }
+    },
+    "spotify.exe": {
+      "press":              { "action": "key", "keys": "space" },
+      "double_press":       { "action": "key", "keys": "ctrl+right" },
+      "triple_press":       { "action": "key", "keys": "ctrl+left" },
+      "long_press":         { "action": "mute" },
+      "press_rotate_right": { "action": "key", "keys": "ctrl+right" },
+      "press_rotate_left":  { "action": "key", "keys": "ctrl+left" }
     }
   }
 }
