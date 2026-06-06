@@ -1,0 +1,11 @@
+pyusb==1.2.1
+libusb==1.0.29.post7
+pycaw==20240413
+comtypes==1.4.1
+pywin32==306
+psutil==5.9.8
+keyboard==0.13.5
+pyautogui==0.9.53
+customtkinter==5.2.2
+pystray==0.19.5
+Pillow==10.2.0

@@ -1,0 +1,28 @@
+# PyInstaller build artifacts
+build/
+dist/
+*.spec.bak
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+.venv/
+venv/
+env/
+
+# Runtime / user-generated
+powermate.log
+*.log
+# user's personal config; ship config.example.json instead
+config.json
+
+# OS / editor
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/
+*.swp

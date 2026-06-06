@@ -1,0 +1,37 @@
+{
+  "timing": {
+    "multi_click_ms": 250,
+    "long_press_ms": 500,
+    "rotate_sensitivity": 1.0,
+    "rotate_acceleration": 0.0
+  },
+  "led": {
+    "mode": "volume",
+    "brightness": 1.0,
+    "pulse_speed": 255,
+    "pulse_table": 0,
+    "flash_on_ms": 200,
+    "flash_off_ms": 800,
+    "fade_speed": 1.0,
+    "fade_delay": 1.0
+  },
+  "start_with_windows": false,
+  "profiles": {
+    "default": {
+      "rotate_right":       { "action": "volume_up",   "amount": 0.04 },
+      "rotate_left":        { "action": "volume_down",  "amount": 0.04 },
+      "press":              { "action": "mute" },
+      "double_press":       { "action": "media_play_pause" },
+      "triple_press":       { "action": "media_next" },
+      "long_press":         { "action": "mic_mute_toggle" },
+      "press_rotate_right": { "action": "scroll_down",  "amount": 3 },
+      "press_rotate_left":  { "action": "scroll_up",    "amount": 3 }
+    },
+    "chrome.exe": {
+      "rotate_right":       { "action": "scroll_down",  "amount": 3 },
+      "rotate_left":        { "action": "scroll_up",    "amount": 3 },
+      "double_press":       { "action": "key", "keys": "ctrl+t" },
+      "long_press":         { "action": "key", "keys": "f5" }
+    }
+  }
+}
