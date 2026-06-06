@@ -34,6 +34,7 @@ class AppWindow:
         self.profile_buttons: Dict[str, ctk.CTkButton] = {}
         self.selected_profile: Optional[str] = None
         self._status_text = ("Initializing...", "gray")
+        self._visible = True  # gate debug logging when minimized to tray
 
     def create(self):
         """Create and setup the main window."""
@@ -125,12 +126,14 @@ class AppWindow:
 
     def show(self):
         if self.window:
+            self._visible = True
             self.window.deiconify()
             self.window.lift()
             self.window.focus()
 
     def hide(self):
         if self.window:
+            self._visible = False
             self.window.withdraw()
 
     def set_status(self, message: str, color: str = "gray"):
@@ -148,8 +151,12 @@ class AppWindow:
             self.status_label.configure(text=f"Status: {msg}", text_color=color)
 
     def log_event(self, message: str):
-        """Thread-safe append to the knob-activity panel (called from worker)."""
-        if not self.window:
+        """Thread-safe append to the knob-activity panel (called from worker).
+
+        Skipped while the window is hidden in the tray to avoid queueing Tk
+        callbacks for a panel nobody is looking at.
+        """
+        if not self.window or not self._visible:
             return
         line = time.strftime("%H:%M:%S ") + message
         try:

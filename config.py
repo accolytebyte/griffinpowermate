@@ -1,10 +1,10 @@
 """Configuration management: load, save, validate config.json."""
+import copy
 import json
 import logging
 import threading
 import os
 from typing import Dict, Any, Optional
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -80,9 +80,16 @@ class Config:
                     self._last_mtime = os.path.getmtime(self.config_file)
                 except Exception as e:
                     logger.error(f"Error loading config: {e}")
-                    self.config = DEFAULT_CONFIG.copy()
+                    # deepcopy so edits don't mutate the module-level defaults.
+                    self.config = copy.deepcopy(DEFAULT_CONFIG)
+                    # Mark this mtime as handled so the watcher doesn't reload the
+                    # broken file every second (avoids log/CPU spam).
+                    try:
+                        self._last_mtime = os.path.getmtime(self.config_file)
+                    except OSError:
+                        pass
             else:
-                self.config = DEFAULT_CONFIG.copy()
+                self.config = copy.deepcopy(DEFAULT_CONFIG)
                 self.save()
 
     def save(self):

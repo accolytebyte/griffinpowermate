@@ -30,10 +30,12 @@ against real PowerMate hardware on Windows 11.
 12. [Building the EXE](#building-the-exe)
 13. [Architecture](#architecture)
 14. [Reverse‑Engineering Notes](#reverse-engineering-notes-windows--winusb)
-15. [Testing](#testing)
-16. [Troubleshooting](#troubleshooting)
-17. [Project Layout](#project-layout)
-18. [Credits & License](#credits--license)
+15. [Security Considerations](#security-considerations)
+16. [Testing](#testing)
+17. [Troubleshooting](#troubleshooting)
+18. [Project Layout](#project-layout)
+19. [Changelog](#changelog)
+20. [Credits & License](#credits--license)
 
 ---
 
@@ -251,6 +253,12 @@ The active app is detected from the foreground window's process name (e.g. `chro
 **Example:** make the knob scroll in Chrome but keep controlling volume everywhere else —
 add a `chrome.exe` profile that overrides only `rotate_left`/`rotate_right`.
 
+A ready-made **`spotify.exe`** profile ships in the defaults: it maps single-press to
+play/pause (`space`), double/triple-press to next/previous track (`ctrl+right` /
+`ctrl+left`), and inherits system-volume control on rotation. Because it sends Spotify's
+own in-app shortcuts while Spotify is focused, play/pause toggles reliably (the global
+media key can otherwise be routed to a different app by Windows).
+
 ---
 
 ## Configuration File
@@ -386,9 +394,36 @@ These findings, discovered while validating against real hardware, are baked int
 
 ---
 
+## Security Considerations
+
+A high-level assessment of the threat model:
+
+- **No remote attack surface.** The app opens no network sockets, servers, or ports. It
+  talks only to a local USB device and the local Windows audio/input APIs.
+- **Runs with normal user privileges.** No elevation is required or requested. The
+  *Start with Windows* entry is written to the per-user `HKCU` Run key (not system-wide
+  `HKLM`), and its command is built from the executable/script path — not from user input,
+  so it isn't injectable.
+- **Code-execution actions are user-defined and local.** The `run` (shell command),
+  `launch` (open file/app/URL), `key`, and `macro` actions execute what *you* put in your
+  own `config.json`. They run with your privileges — only bind commands you trust. The
+  threat model is "the user configures their own knob"; there is no path for a remote party
+  to inject actions.
+  - `run` uses the shell (`shell=True`) so that shell features work; treat its value like a
+    line you'd type into a terminal yourself.
+- **Input is bounded and parsed safely.** USB reports are fixed-size 6-byte reads; the
+  config is parsed with `json.load` (no `eval`/`pickle`), and a malformed config falls back
+  to defaults rather than crashing.
+- **Keyboard output only.** The app uses the `keyboard` library to *send* keystrokes for
+  bindings; it does not install a global key logger/hook.
+
+No high-severity issues were identified. If you distribute the EXE, dependencies are
+sourced from PyPI and pinned in `requirements.txt`; rebuild from source if you require a
+verified supply chain.
+
 ## Testing
 
-Two test suites run **without** hardware:
+Three test suites run **without** hardware:
 
 ```powershell
 python _test_gesture.py     # gesture state machine: all 8 triggers + regressions
@@ -470,6 +505,16 @@ powermate-app/
 ```
 
 ---
+
+## Changelog
+
+See [`CHANGELOG.md`](CHANGELOG.md) for the full version history. Highlights:
+
+- **1.1.1** — security/memory hardening (config deepcopy, reload-spam fix, debug-panel
+  idle optimization) and a documented vulnerability assessment.
+- **1.1.0** — audio control fix (pycaw API change), 3-step macros, knob-activity debug
+  panel, Start-with-Windows toggle, tray/quit controls, and a `spotify.exe` profile.
+- **1.0.0** — initial release.
 
 ## Credits & License
 
