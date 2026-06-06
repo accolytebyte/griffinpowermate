@@ -31,7 +31,8 @@
       "rotate_right":       { "action": "scroll_down",  "amount": 3 },
       "rotate_left":        { "action": "scroll_up",    "amount": 3 },
       "double_press":       { "action": "key", "keys": "ctrl+t" },
-      "long_press":         { "action": "key", "keys": "f5" }
+      "long_press":         { "action": "key", "keys": "f5" },
+      "triple_press":       { "action": "macro", "sequence": ["ctrl+l", "ctrl+c", "ctrl+t"] }
     }
   }
 }

@@ -19,6 +19,7 @@ class ActionEditor(ctk.CTkFrame):
         "scroll_up",
         "scroll_down",
         "key",
+        "macro",
         "launch",
         "run"
     ]
@@ -80,9 +81,19 @@ class ActionEditor(ctk.CTkFrame):
             ctk.CTkButton(
                 self.param_frame,
                 text="Record",
-                command=self._record_keys,
+                command=lambda e=entry: self._record_into(e),
                 width=60
             ).pack(side="left", padx=2)
+
+        elif action == "macro":
+            # Up to 3 key combos sent in sequence.
+            ctk.CTkLabel(self.param_frame, text="Macro (3 steps):").pack(side="left", padx=5)
+            for i in (1, 2, 3):
+                entry = ctk.CTkEntry(self.param_frame, width=110, placeholder_text=f"step {i}")
+                entry.pack(side="left", padx=2)
+                ctk.CTkButton(self.param_frame, text="●", width=24,
+                              command=lambda e=entry: self._record_into(e)).pack(side="left", padx=(0, 4))
+                self.param_widgets[f"macro{i}"] = entry
 
         elif action in ["launch"]:
             ctk.CTkLabel(self.param_frame, text="Path/URL:").pack(side="left", padx=5)
@@ -104,11 +115,8 @@ class ActionEditor(ctk.CTkFrame):
         "space": "space", "Tab": "tab", "Home": "home", "End": "end",
     }
 
-    def _record_keys(self):
-        """Open a modal that captures the next key combination."""
-        if "keys" not in self.param_widgets:
-            return
-
+    def _record_into(self, target_entry):
+        """Open a modal that captures the next key combination into target_entry."""
         dialog = ctk.CTkToplevel(self)
         dialog.title("Record Shortcut")
         dialog.geometry("320x120")
@@ -143,8 +151,8 @@ class ActionEditor(ctk.CTkFrame):
             parts.append(key)
             combo = "+".join(parts)
 
-            self.param_widgets["keys"].delete(0, tk.END)
-            self.param_widgets["keys"].insert(0, combo)
+            target_entry.delete(0, tk.END)
+            target_entry.insert(0, combo)
             dialog.destroy()
 
         dialog.bind("<KeyPress>", on_key)
@@ -163,13 +171,23 @@ class ActionEditor(ctk.CTkFrame):
             self.action_dropdown.set(action)
             self._refresh_params(action)
 
-            # Load parameters
-            for param_name, widget in self.param_widgets.items():
-                if param_name in action_config:
-                    value = action_config[param_name]
-                    if isinstance(widget, ctk.CTkEntry):
-                        widget.delete(0, tk.END)
-                        widget.insert(0, str(value))
+            if action == "macro":
+                # Populate the 3 step fields from the saved sequence list.
+                seq = action_config.get("sequence", []) or []
+                for i in (1, 2, 3):
+                    w = self.param_widgets.get(f"macro{i}")
+                    if w is not None:
+                        w.delete(0, tk.END)
+                        if i - 1 < len(seq):
+                            w.insert(0, str(seq[i - 1]))
+            else:
+                # Load simple parameters by name.
+                for param_name, widget in self.param_widgets.items():
+                    if param_name in action_config:
+                        value = action_config[param_name]
+                        if isinstance(widget, ctk.CTkEntry):
+                            widget.delete(0, tk.END)
+                            widget.insert(0, str(value))
 
     def get_action(self) -> Dict[str, Any]:
         """Get current action configuration."""
@@ -177,6 +195,17 @@ class ActionEditor(ctk.CTkFrame):
             return {"action": "none"}
 
         config = {"action": self.current_action}
+
+        if self.current_action == "macro":
+            seq = []
+            for i in (1, 2, 3):
+                w = self.param_widgets.get(f"macro{i}")
+                if w is not None:
+                    v = w.get().strip()
+                    if v:
+                        seq.append(v)
+            config["sequence"] = seq
+            return config
 
         for param_name, widget in self.param_widgets.items():
             if isinstance(widget, ctk.CTkEntry):

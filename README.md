@@ -44,8 +44,11 @@ against real PowerMate hardware on Windows 11.
 - **Per‑application profiles** — different bindings depending on the focused app, with
   inheritance from a `default` profile.
 - **Rich action set** — system volume, mute, **microphone mute**, media transport
-  (play/pause, next, previous), scroll, arbitrary **keyboard shortcuts**, **launch**
-  apps/files/URLs, and **run** shell commands.
+  (play/pause, next, previous), scroll, arbitrary **keyboard shortcuts**, **3‑step
+  keyboard macros**, **launch** apps/files/URLs, and **run** shell commands.
+- **Knob activity / debug panel** — a live, timestamped log of incoming knob events and
+  the action each one triggers.
+- **Start with Windows** — one‑click toggle to launch automatically at login.
 - **Full LED control** — `off`, `solid`, software `pulse`, `flash`, and `volume`
   (brightness follows the system volume, then fades).
 - **Modern GUI** (CustomTkinter) — profile sidebar with a running‑app picker, a
@@ -143,7 +146,22 @@ The app starts minimized to the **system tray**. Right‑click the tray icon for
 - **Pause / Resume** — temporarily stop/restart responding to the knob.
 - **Exit** — quit.
 
-Closing the Settings window **hides it to the tray** (it does not quit the app).
+### Window controls (bottom bar)
+
+- **Save** / **Reload** — persist or re‑read `config.json`.
+- **Minimize to Tray** — hide the window but keep the app running in the background.
+- **Quit** — fully exit the application.
+- **Start with Windows** — checkbox that registers/unregisters the app in the
+  per‑user startup (HKCU `…\Run`) so it launches automatically at login.
+- Clicking the window's **X** also minimizes to the tray (it does **not** quit).
+
+### Knob Activity panel
+
+The panel above the bottom bar shows a live, timestamped log of every event received
+from the knob — the trigger, the focused app, and the action taken
+(e.g. `12:01:03 rotate_right +2 [chrome.exe] -> scroll_down`). Use it to confirm that
+gestures like **triple‑press** and **long‑press** are firing and to debug bindings.
+**Clear** empties the log.
 
 ### The Settings window
 
@@ -194,6 +212,7 @@ doesn't also register as a press.
 | `scroll_up` | `amount` (lines) | Scroll up |
 | `scroll_down` | `amount` (lines) | Scroll down |
 | `key` | `keys` (e.g. `"ctrl+z"`) | Send a keyboard shortcut |
+| `macro` | `sequence` (list, up to 3) | Send several key combos in order, e.g. `["ctrl+c","alt+tab","ctrl+v"]` |
 | `launch` | `path` | Open a file, app, or URL |
 | `run` | `command` | Run a shell command |
 | `none` | — | Do nothing (also used to inherit from `default`) |
@@ -373,6 +392,7 @@ Two test suites run **without** hardware:
 
 ```powershell
 python _test_gesture.py     # gesture state machine: all 8 triggers + regressions
+python _test_features.py    # macro action, startup module, debug panel, triple/long bindings
 python _smoketest_gui.py    # builds the GUI, exercises profiles/panels/save, tears down
 ```
 
@@ -429,6 +449,7 @@ powermate-app/
 ├── actions.py              # action executors
 ├── app_monitor.py          # active-app detection
 ├── config.py               # config load/save/watch
+├── startup.py              # start-with-Windows (HKCU Run key)
 ├── tray.py                 # system tray
 ├── ui/
 │   ├── app_window.py       # main settings window
@@ -442,6 +463,7 @@ powermate-app/
 ├── build.spec              # PyInstaller one-file build
 ├── install.bat             # convenience installer (deps + driver guidance)
 ├── _test_gesture.py        # gesture unit tests
+├── _test_features.py       # macro / startup / debug-panel tests
 ├── _smoketest_gui.py       # GUI smoke test
 ├── README.md
 └── QUICKSTART.md

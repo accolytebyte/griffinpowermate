@@ -115,7 +115,9 @@ class PowerMateApp:
         self.tray.start()
 
         # Main window
-        self.app_window = AppWindow(self.config, on_config_change=self._on_config_change)
+        self.app_window = AppWindow(self.config,
+                                    on_config_change=self._on_config_change,
+                                    on_quit=self._quit)
         root = self.app_window.create()
 
         # Run GUI loop
@@ -167,6 +169,13 @@ class PowerMateApp:
         # Get bindings for app (falls back to default)
         profile = self.config.get_profile(app_name)
         action_config = profile.get(trigger.value, {})
+        action_name = action_config.get("action", "none") if action_config else "none"
+
+        # Surface the event in the GUI debug panel.
+        if self.app_window:
+            amt = f" {amount:+d}" if amount else ""
+            app_tag = f" [{app_name}]" if app_name else ""
+            self.app_window.log_event(f"{trigger.value}{amt}{app_tag} -> {action_name}")
 
         if action_config:
             self.executor.execute(action_config, amount)

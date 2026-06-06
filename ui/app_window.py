@@ -1,4 +1,5 @@
 """Main settings window using CustomTkinter."""
+import time
 import customtkinter as ctk
 from typing import Optional, Callable, Dict
 from .profile_view import ProfileView
@@ -6,22 +7,28 @@ from .led_panel import LEDPanel
 from .timing_panel import TimingPanel
 from config import Config
 from app_monitor import get_running_processes
+import startup
 
 
 SELECTED_COLOR = "#1f6aa5"
+MAX_DEBUG_LINES = 300
 
 
 class AppWindow:
     """Main application settings window."""
 
-    def __init__(self, config: Config, on_config_change: Callable = None):
+    def __init__(self, config: Config, on_config_change: Callable = None,
+                 on_quit: Callable = None):
         self.config = config
         self.on_config_change = on_config_change or (lambda: None)
+        self.on_quit = on_quit or (lambda: None)
         self.window: Optional[ctk.CTk] = None
         self.profile_view: Optional[ProfileView] = None
         self.led_panel: Optional[LEDPanel] = None
         self.timing_panel: Optional[TimingPanel] = None
         self.status_label: Optional[ctk.CTkLabel] = None
+        self.debug_box: Optional[ctk.CTkTextbox] = None
+        self.startup_var: Optional[ctk.BooleanVar] = None
 
         self.sidebar: Optional[ctk.CTkScrollableFrame] = None
         self.profile_buttons: Dict[str, ctk.CTkButton] = {}
@@ -70,16 +77,43 @@ class AppWindow:
         self.timing_panel = TimingPanel(self.notebook.add("Timing"), self.config)
         self.timing_panel.create()
 
-        # Status bar
+        # Knob activity / debug panel
+        debug_frame = ctk.CTkFrame(self.window)
+        debug_frame.pack(fill="x", padx=10, pady=(0, 5))
+
+        debug_header = ctk.CTkFrame(debug_frame, fg_color="transparent")
+        debug_header.pack(fill="x")
+        ctk.CTkLabel(debug_header, text="Knob Activity",
+                     font=("Arial", 11, "bold")).pack(side="left", padx=2)
+        ctk.CTkButton(debug_header, text="Clear", width=60,
+                      command=self._clear_debug).pack(side="right")
+
+        self.debug_box = ctk.CTkTextbox(debug_frame, height=120,
+                                        font=("Consolas", 10))
+        self.debug_box.pack(fill="x", pady=(2, 0))
+        self.debug_box.insert("end", "Waiting for knob events...\n")
+
+        # Bottom bar: status (left) + controls (right)
         status_frame = ctk.CTkFrame(self.window)
         status_frame.pack(fill="x", padx=10, pady=(0, 10))
 
         self.status_label = ctk.CTkLabel(status_frame, text="Status: Initializing...", text_color="gray")
-        self.status_label.pack(side="left")
+        self.status_label.pack(side="left", padx=(2, 10))
 
-        ctk.CTkButton(status_frame, text="Save", command=self._save).pack(side="right", padx=(5, 0))
-        ctk.CTkButton(status_frame, text="Reload", command=self._reload).pack(side="right", padx=(5, 0))
+        # Start-with-Windows toggle (reads the real registry state).
+        self.startup_var = ctk.BooleanVar(value=startup.is_enabled())
+        ctk.CTkCheckBox(status_frame, text="Start with Windows",
+                        variable=self.startup_var,
+                        command=self._toggle_startup).pack(side="left", padx=4)
 
+        ctk.CTkButton(status_frame, text="Quit", width=70, fg_color="#8a3030",
+                      hover_color="#a33", command=self._quit_app).pack(side="right", padx=(5, 0))
+        ctk.CTkButton(status_frame, text="Minimize to Tray", width=120,
+                      command=self._hide_to_tray).pack(side="right", padx=(5, 0))
+        ctk.CTkButton(status_frame, text="Save", width=70, command=self._save).pack(side="right", padx=(5, 0))
+        ctk.CTkButton(status_frame, text="Reload", width=70, command=self._reload).pack(side="right", padx=(5, 0))
+
+        # The window's X button minimizes to tray (keeps running in background).
         self.window.protocol("WM_DELETE_WINDOW", self._hide_to_tray)
 
         self._refresh_profile_list()
@@ -112,6 +146,49 @@ class AppWindow:
         if self.status_label:
             msg, color = self._status_text
             self.status_label.configure(text=f"Status: {msg}", text_color=color)
+
+    def log_event(self, message: str):
+        """Thread-safe append to the knob-activity panel (called from worker)."""
+        if not self.window:
+            return
+        line = time.strftime("%H:%M:%S ") + message
+        try:
+            self.window.after(0, lambda: self._append_debug(line))
+        except Exception:
+            pass
+
+    def _append_debug(self, line: str):
+        if not self.debug_box:
+            return
+        self.debug_box.insert("end", line + "\n")
+        # Trim to keep the box bounded.
+        try:
+            total = int(self.debug_box.index("end-1c").split(".")[0])
+            if total > MAX_DEBUG_LINES:
+                self.debug_box.delete("1.0", f"{total - MAX_DEBUG_LINES}.0")
+        except Exception:
+            pass
+        self.debug_box.see("end")
+
+    def _clear_debug(self):
+        if self.debug_box:
+            self.debug_box.delete("1.0", "end")
+
+    def _toggle_startup(self):
+        enabled = bool(self.startup_var.get())
+        ok = startup.set_enabled(enabled)
+        # Persist the intent in config too, and reflect the real result.
+        self.config.set("start_with_windows", enabled)
+        self.config.save()
+        if ok:
+            self.set_status(f"Start with Windows {'enabled' if enabled else 'disabled'}", "green")
+        else:
+            self.set_status("Could not change startup setting", "orange")
+            self.startup_var.set(startup.is_enabled())
+
+    def _quit_app(self):
+        """Fully quit the application."""
+        self.on_quit()
 
     def _refresh_profile_list(self):
         """Rebuild the sidebar profile buttons."""

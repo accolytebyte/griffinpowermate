@@ -9,10 +9,27 @@ import logging
 import threading
 from ctypes import cast, POINTER
 import comtypes
-from comtypes import CLSCTX_ALL
-from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
+from pycaw.pycaw import IAudioEndpointVolume
+from pycaw.api.mmdeviceapi import IMMDeviceEnumerator
+from pycaw.constants import CLSID_MMDeviceEnumerator
 
 logger = logging.getLogger(__name__)
+
+# EDataFlow / ERole constants (Windows Core Audio)
+EDATAFLOW_RENDER = 0   # speakers / output
+EDATAFLOW_CAPTURE = 1  # microphone / input
+EROLE_MULTIMEDIA = 1
+
+
+def _make_endpoint_volume(data_flow: int):
+    """Create an IAudioEndpointVolume for the default endpoint of the given
+    data flow, using the low-level device enumerator. This works across pycaw
+    versions (newer pycaw's GetSpeakers() returns a wrapper without .Activate)."""
+    enumerator = comtypes.CoCreateInstance(
+        CLSID_MMDeviceEnumerator, IMMDeviceEnumerator, comtypes.CLSCTX_ALL)
+    endpoint = enumerator.GetDefaultAudioEndpoint(data_flow, EROLE_MULTIMEDIA)
+    activated = endpoint.Activate(IAudioEndpointVolume._iid_, comtypes.CLSCTX_ALL, None)
+    return cast(activated, POINTER(IAudioEndpointVolume))
 
 
 class AudioController:
@@ -37,12 +54,10 @@ class AudioController:
         if iface is None:
             self._ensure_com()
             try:
-                devices = AudioUtilities.GetSpeakers()
-                activated = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
-                iface = cast(activated, POINTER(IAudioEndpointVolume))
+                iface = _make_endpoint_volume(EDATAFLOW_RENDER)
                 self._local.speakers = iface
             except Exception as e:
-                logger.debug(f"Failed to get speaker interface: {e}")
+                logger.warning(f"Failed to get speaker interface: {e}")
                 return None
         return iface
 
@@ -52,14 +67,10 @@ class AudioController:
         if iface is None:
             self._ensure_com()
             try:
-                devices = AudioUtilities.GetMicrophone()
-                if not devices:
-                    return None
-                activated = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
-                iface = cast(activated, POINTER(IAudioEndpointVolume))
+                iface = _make_endpoint_volume(EDATAFLOW_CAPTURE)
                 self._local.mic = iface
             except Exception as e:
-                logger.debug(f"Failed to get microphone interface: {e}")
+                logger.warning(f"Failed to get microphone interface: {e}")
                 return None
         return iface
 

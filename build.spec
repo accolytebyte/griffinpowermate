@@ -34,6 +34,7 @@ hiddenimports = [
     "win32api",
 ]
 hiddenimports += collect_submodules("comtypes")
+hiddenimports += collect_submodules("pycaw")
 
 block_cipher = None
 

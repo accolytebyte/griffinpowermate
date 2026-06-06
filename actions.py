@@ -2,6 +2,7 @@
 import logging
 import subprocess
 import os
+import time
 from typing import Callable, Any, Dict
 from audio import AudioController
 import pyautogui
@@ -33,10 +34,10 @@ class ActionExecutor:
                 pass
 
             elif action == "volume_up":
-                self._volume_up(amount or action_config.get("amount", 0.04))
+                self._volume_up((amount or 1) * action_config.get("amount", 0.04))
 
             elif action == "volume_down":
-                self._volume_down(amount or action_config.get("amount", 0.04))
+                self._volume_down((amount or 1) * action_config.get("amount", 0.04))
 
             elif action == "mute":
                 self._mute_toggle()
@@ -54,14 +55,17 @@ class ActionExecutor:
                 self._media_key("previous track")
 
             elif action == "scroll_up":
-                self._scroll(amount or action_config.get("amount", 3), direction="up")
+                self._scroll((amount or 1) * action_config.get("amount", 3), direction="up")
 
             elif action == "scroll_down":
-                self._scroll(amount or action_config.get("amount", 3), direction="down")
+                self._scroll((amount or 1) * action_config.get("amount", 3), direction="down")
 
             elif action == "key":
                 keys = action_config.get("keys", "")
                 self._send_keys(keys)
+
+            elif action == "macro":
+                self._macro(action_config.get("sequence", []))
 
             elif action == "launch":
                 path = action_config.get("path", "")
@@ -119,6 +123,17 @@ class ActionExecutor:
             keyboard.send(keys)
         except Exception as e:
             logger.debug(f"Error sending keys '{keys}': {e}")
+
+    def _macro(self, sequence):
+        """Send a sequence of key combos in order (a keyboard macro)."""
+        if not sequence:
+            return
+        for combo in sequence:
+            combo = (combo or "").strip()
+            if not combo:
+                continue
+            self._send_keys(combo)
+            time.sleep(0.05)
 
     def _launch(self, path: str):
         """Launch file/application/URL."""
