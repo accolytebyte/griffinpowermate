@@ -14,6 +14,7 @@ from app_monitor import get_active_process_name
 from config import Config
 from tray import TrayIcon
 from ui.app_window import AppWindow
+from ui.osd import OSD, TRIGGER_LABELS, action_label
 
 # Setup logging
 logging.basicConfig(
@@ -51,6 +52,8 @@ class PowerMateApp:
         # UI
         self.app_window: Optional[AppWindow] = None
         self.tray: Optional[TrayIcon] = None
+        self.osd = OSD()
+        self._apply_osd_from_config()
 
         # Control
         self.running = False
@@ -70,6 +73,18 @@ class PowerMateApp:
         self.led.flash_off_ms = self.config.get("led.flash_off_ms", 800)
         self.led.fade_speed = self.config.get("led.fade_speed", 1.0)
         self.led.fade_delay = self.config.get("led.fade_delay", 1.0)
+
+    def _apply_osd_from_config(self):
+        """Push OSD settings from config into the overlay."""
+        self.osd.set_options(
+            enabled=self.config.get("osd.enabled", True),
+            opacity=self.config.get("osd.opacity", 0.85),
+            duration_ms=self.config.get("osd.duration_ms", 1200),
+            bg_color=self.config.get("osd.bg_color", "#1a1a1a"),
+            font_family=self.config.get("osd.font_family", "Segoe UI"),
+            font_color=self.config.get("osd.font_color", "#ffffff"),
+            font_size=self.config.get("osd.font_size", 15),
+        )
 
     def start(self):
         """Start the application."""
@@ -117,14 +132,20 @@ class PowerMateApp:
         # Main window
         self.app_window = AppWindow(self.config,
                                     on_config_change=self._on_config_change,
-                                    on_quit=self._quit)
+                                    on_quit=self._quit,
+                                    on_osd_preview=self._preview_osd)
         root = self.app_window.create()
+        self.osd.attach(root)
 
         # Run GUI loop
         try:
             root.mainloop()
         except KeyboardInterrupt:
             self.stop()
+
+    def _preview_osd(self):
+        """Flash a sample OSD using current settings (from the GUI Preview button)."""
+        self.osd.show("Double Press", "Play / Pause")
 
     def _show_settings(self):
         """Show settings window."""
@@ -177,6 +198,10 @@ class PowerMateApp:
             app_tag = f" [{app_name}]" if app_name else ""
             self.app_window.log_event(f"{trigger.value}{amt}{app_tag} -> {action_name}")
 
+        # Translucent on-screen display of the gesture + bound action.
+        self.osd.show(TRIGGER_LABELS.get(trigger.value, trigger.value),
+                      action_label(action_config))
+
         if action_config:
             self.executor.execute(action_config, amount)
 
@@ -184,6 +209,7 @@ class PowerMateApp:
         """Called when config is reloaded."""
         logger.info("Config changed, reloading...")
         self._setup_led_from_config()
+        self._apply_osd_from_config()
 
         # Update gesture timings
         self.gesture.config.multi_click_ms = self.config.get("timing.multi_click_ms", 250)

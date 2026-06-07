@@ -5,6 +5,7 @@ from typing import Optional, Callable, Dict
 from .profile_view import ProfileView
 from .led_panel import LEDPanel
 from .timing_panel import TimingPanel
+from .osd_panel import OSDPanel
 from config import Config
 from app_monitor import get_running_processes
 import startup
@@ -18,14 +19,16 @@ class AppWindow:
     """Main application settings window."""
 
     def __init__(self, config: Config, on_config_change: Callable = None,
-                 on_quit: Callable = None):
+                 on_quit: Callable = None, on_osd_preview: Callable = None):
         self.config = config
         self.on_config_change = on_config_change or (lambda: None)
         self.on_quit = on_quit or (lambda: None)
+        self.on_osd_preview = on_osd_preview or (lambda: None)
         self.window: Optional[ctk.CTk] = None
         self.profile_view: Optional[ProfileView] = None
         self.led_panel: Optional[LEDPanel] = None
         self.timing_panel: Optional[TimingPanel] = None
+        self.osd_panel: Optional[OSDPanel] = None
         self.status_label: Optional[ctk.CTkLabel] = None
         self.debug_box: Optional[ctk.CTkTextbox] = None
         self.startup_var: Optional[ctk.BooleanVar] = None
@@ -77,6 +80,11 @@ class AppWindow:
 
         self.timing_panel = TimingPanel(self.notebook.add("Timing"), self.config)
         self.timing_panel.create()
+
+        self.osd_panel = OSDPanel(self.notebook.add("OSD"), self.config,
+                                  on_apply=self._apply_live,
+                                  on_preview=self.on_osd_preview)
+        self.osd_panel.create()
 
         # Knob activity / debug panel
         debug_frame = ctk.CTkFrame(self.window)
@@ -278,6 +286,8 @@ class AppWindow:
             self.led_panel.save()
         if self.timing_panel:
             self.timing_panel.save()
+        if self.osd_panel:
+            self.osd_panel.save()
         if self.profile_view:
             self.profile_view.save()
         self.config.save()
@@ -293,6 +303,8 @@ class AppWindow:
             self.led_panel.reload()
         if self.timing_panel:
             self.timing_panel.reload()
+        if self.osd_panel:
+            self.osd_panel.reload()
         self.set_status("Reloaded", "green")
 
     def _hide_to_tray(self):

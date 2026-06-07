@@ -28,6 +28,15 @@ DEFAULT_CONFIG = {
         "fade_delay": 1.0
     },
     "start_with_windows": False,
+    "osd": {
+        "enabled": True,
+        "opacity": 0.85,
+        "duration_ms": 1200,
+        "bg_color": "#1a1a1a",
+        "font_family": "Segoe UI",
+        "font_color": "#ffffff",
+        "font_size": 15
+    },
     "profiles": {
         "default": {
             "rotate_right": {"action": "volume_up", "amount": 0.04},

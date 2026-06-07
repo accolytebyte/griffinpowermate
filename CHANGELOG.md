@@ -4,6 +4,23 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] — 2026-06-07
+
+### Added
+- **Translucent on-screen display (OSD).** A small two-line overlay now pops up in the
+  bottom-right corner (over the taskbar) on every knob gesture: line 1 is the gesture
+  (*Single / Double / Triple / Long Press, Knob Left / Right, Press + Knob Left / Right*),
+  line 2 is the action that gesture is bound to in the **active** profile (e.g. *Volume
+  Up*, *Play / Pause*, or the key combo for `key` / `macro`). Unbound gestures still show
+  with `—` on line 2. The overlay is always-on-top, never steals focus, and stays out of
+  Alt-Tab / the taskbar. It auto-hides ~1.2s after the last event with a short fade, and
+  the timer resets while you keep turning. Works even when the main window is minimized to
+  the tray. (`ui/osd.py`)
+- **OSD settings tab** with full styling control: enable toggle, opacity, duration,
+  background color (hex + color picker), font family (from installed system fonts), font
+  color (hex + picker), and font size (8–24pt), plus a **Preview** button. All settings
+  persist under a new `osd` block in `config.json` and apply live. (`ui/osd_panel.py`)
+
 ## [1.1.1] — 2026-06-06
 
 ### Security
@@ -94,6 +111,7 @@ All notable changes to this project are documented here. The format is based on
   power cycle. Hardware pulse modes are therefore disabled on Windows; pulse/flash are
   done in software.
 
+[1.2.0]: https://github.com/accolytebyte/griffinpowermate/releases/tag/v1.2.0
 [1.1.1]: https://github.com/accolytebyte/griffinpowermate/releases/tag/v1.1.1
 [1.1.0]: https://github.com/accolytebyte/griffinpowermate/releases/tag/v1.1.0
 [1.0.0]: https://github.com/accolytebyte/griffinpowermate/releases/tag/v1.0.0

@@ -50,6 +50,9 @@ against real PowerMate hardware on Windows 11.
   keyboard macros**, **launch** apps/files/URLs, and **run** shell commands.
 - **Knob activity / debug panel** — a live, timestamped log of incoming knob events and
   the action each one triggers.
+- **Translucent on‑screen display (OSD)** — a two‑line overlay in the bottom‑right corner
+  (over the taskbar) that shows the gesture and its bound action on every turn/press.
+  Fully styleable (opacity, background color, font family/color/size 8–24pt, duration).
 - **Start with Windows** — one‑click toggle to launch automatically at login.
 - **Full LED control** — `off`, `solid`, software `pulse`, `flash`, and `volume`
   (brightness follows the system volume, then fades).
@@ -165,6 +168,25 @@ from the knob — the trigger, the focused app, and the action taken
 gestures like **triple‑press** and **long‑press** are firing and to debug bindings.
 **Clear** empties the log.
 
+### On‑screen display (OSD)
+
+A small translucent overlay appears in the **bottom‑right corner, over the taskbar**,
+each time you use the knob. It shows two lines:
+
+- **Line 1** — the gesture: *Single Press, Double Press, Triple Press, Long Press,
+  Knob Left, Knob Right, Press + Knob Left/Right*.
+- **Line 2** — the action bound to that gesture in the **active** profile (e.g. *Volume
+  Up*, *Play / Pause*, or the key combo for a `key`/`macro`). Unbound gestures show `—`.
+
+It is always‑on‑top, never steals keyboard focus, stays out of Alt‑Tab and the taskbar,
+and auto‑hides ~1.2s after the last event with a brief fade (the timer resets while you
+keep turning). It works even when the main window is minimized to the tray.
+
+Configure it on the **OSD tab**: enable/disable, opacity, duration, background color
+(hex or color picker), font family (any installed font), font color, and font size
+(8–24pt). **Preview** flashes a sample using the current settings. Settings persist in
+the `osd` block of `config.json` and apply live.
+
 ### The Settings window
 
 - **Profiles (left sidebar)** — `default` plus one entry per app. Click to select.
@@ -177,6 +199,8 @@ gestures like **triple‑press** and **long‑press** are firing and to debug bi
 - **LED tab** — choose the mode, brightness, pulse speed/waveform, flash timing, and
   volume‑fade timing. **Test LED** applies the settings to the device live.
 - **Timing tab** — multi‑click window, long‑press threshold, rotation sensitivity.
+- **OSD tab** — enable the on‑screen display and style it (opacity, duration, background
+  color, font family/color/size 8–24pt); **Preview** flashes a sample.
 - **Save** writes everything to `config.json`; **Reload** re‑reads it.
 
 ---
